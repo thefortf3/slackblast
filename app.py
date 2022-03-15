@@ -319,7 +319,7 @@ async def command(ack, body, respond, client, logger):
         },
         {
             "type": "input",
-            "block_id": "others",
+            "block_id": "other_pax",
             "element": {
                 "type": "plain_text_input",
                 "action_id": "others-action",
