@@ -471,7 +471,7 @@ async def view_submission(ack, body, logger, client):
         date_msg = f"*DATE*: " + the_date
         ao_msg = f"*AO*: <#" + the_ao + ">"
         q_msg = f"*Q*: <@" + the_q + ">"
-        pax_msg = f"*PAX*: " + pax_formatted + ', ' + ', '.join(other_pax)
+        pax_msg = f"*PAX*: " + pax_formatted + ', ' + other_pax
         fngs_msg = f"*FNGs*: " + fngs
         count_msg = f"*COUNT*: " + count
         moleskine_msg = moleskine
@@ -495,7 +495,7 @@ async def view_submission(ack, body, logger, client):
             date_msg = f"DATE: " + the_date
             ao_msg = f"AO: " + (ao_name or '').replace('the', '').title()
             q_msg = f"Q: " + q_name
-            pax_msg = f"PAX: " + pax_names
+            pax_msg = f"PAX: " + pax_names + ", " + other_pax
             fngs_msg = f"FNGs: " + fngs
             count_msg = f"COUNT: " + count
             moleskine_msg = moleskine
@@ -517,7 +517,7 @@ async def view_submission(ack, body, logger, client):
                 date=the_date, 
                 qic=q_name, 
                 ao=ao_name, 
-                pax=pax_names, 
+                pax=pax_names + ", " + other_pax, 
                 fngs=fngs, 
                 backblast=moleskine
             )
