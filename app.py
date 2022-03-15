@@ -3,6 +3,7 @@ from decouple import config, UndefinedValueError
 from fastapi import FastAPI, Request
 from slack_bolt.adapter.fastapi.async_handler import AsyncSlackRequestHandler
 from slack_bolt.async_app import AsyncApp
+from wordpress import postToWordpress
 import datetime
 from datetime import datetime, timezone, timedelta
 import json
@@ -313,7 +314,24 @@ async def command(ack, body, respond, client, logger):
             },
             "label": {
                 "type": "plain_text",
-                "text": "List untaggable names separated by commas (FNGs, Willy Lomans, etc.)"
+                "text": "List FNGs separated by commas"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "others",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "others-action",
+                "initial_value": "None",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Other PAX"
+                }
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "List untaggable names separated by commas (those not on Slack)"
             }
         },
         {
@@ -417,11 +435,11 @@ async def view_submission(ack, body, logger, client):
     await ack()
     result = body["view"]["state"]["values"]
     title = result["title"]["title"]["value"]
-    date = result["date"]["datepicker-action"]["selected_date"]
     the_ao = result["the_ao"]["channels_select-action"]["selected_channel"]
     the_q = result["the_q"]["users_select-action"]["selected_user"]
     pax = result["the_pax"]["multi_users_select-action"]["selected_users"]
     fngs = result["fngs"]["fng-action"]["value"]
+    other_pax = result["other_pax"]["others-action"]["value"]
     count = result["count"]["count-action"]["value"]
     moleskine = result["moleskine"]["plain_text_input-action"]["value"]
     destination = result["destination"]["destination-action"]["selected_option"]["value"]
@@ -453,7 +471,7 @@ async def view_submission(ack, body, logger, client):
         date_msg = f"*DATE*: " + the_date
         ao_msg = f"*AO*: <#" + the_ao + ">"
         q_msg = f"*Q*: <@" + the_q + ">"
-        pax_msg = f"*PAX*: " + pax_formatted
+        pax_msg = f"*PAX*: " + pax_formatted + ', ' + ', '.join(other_pax)
         fngs_msg = f"*FNGs*: " + fngs
         count_msg = f"*COUNT*: " + count
         moleskine_msg = moleskine
@@ -492,6 +510,21 @@ async def view_submission(ack, body, logger, client):
             email_not_configured_error))
     except Exception as sendmail_err:
         logger.error('Error with sendmail: {}'.format(sendmail_err))
+    try:
+        if config("WORDPRESS_BASE_URL", OPTIONAL_INPUT_VALUE) != OPTIONAL_INPUT_VALUE:
+            result = postToWordpress(
+                title=title, 
+                date=the_date, 
+                qic=q_name, 
+                ao=ao_name, 
+                pax=pax_names, 
+                fngs=fngs, 
+                backblast=moleskine
+            )
+            logger.info("Poest to Wordpress result: {}".format(json.dumps(result, indent=2)))
+    except Exception as wordpress_err:
+        logger.error("Error with wordpress: {}".format(wordpress_err))
+        
 
 
 def make_body(date, ao, q, pax, fngs, count, moleskine):
