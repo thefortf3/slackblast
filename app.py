@@ -3,7 +3,7 @@ from decouple import config, UndefinedValueError
 from fastapi import FastAPI, Request
 from slack_bolt.adapter.fastapi.async_handler import AsyncSlackRequestHandler
 from slack_bolt.async_app import AsyncApp
-from wordpress import postToWordpress
+from . import worpress
 import datetime
 from datetime import datetime, timezone, timedelta
 import json
@@ -512,7 +512,7 @@ async def view_submission(ack, body, logger, client):
         logger.error('Error with sendmail: {}'.format(sendmail_err))
     try:
         if config("WORDPRESS_BASE_URL", OPTIONAL_INPUT_VALUE) != OPTIONAL_INPUT_VALUE:
-            result = postToWordpress(
+            result = worpress.postToWordpress(
                 title=title, 
                 date=the_date, 
                 qic=q_name, 
