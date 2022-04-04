@@ -471,7 +471,7 @@ async def view_submission(ack, body, logger, client):
     other_pax_list = []
     pax_string = pax_formatted
     if other_pax is not "None":
-        pax_string = ", " + other_pax
+        pax_string = pax_formatted + ", " + other_pax
         pax_names = pax_names + ", " + other_pax
     msg = ""
     try:
