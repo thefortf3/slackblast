@@ -461,6 +461,18 @@ async def view_submission(ack, body, logger, client):
     q_name = (await get_user_names([the_q], logger, client) or [''])[0]
     pax_names = ', '.join(await get_user_names(pax, logger, client) or [''])
 
+    fng_list = []
+    fng_string = "0"
+    if fngs is not "None":
+        fng_list = fngs.split(',')
+        fng_list = [s.strip() for s in fng_list]
+        fng_string = str(len(fng_list)) + " " + ", ".join(fng_list)
+
+    other_pax_list = []
+    pax_string = pax_formatted
+    if other_pax is not "None":
+        pax_string = ", " + other_pax
+        pax_names = pax_names + ", " + other_pax
     msg = ""
     try:
         # formatting a message
@@ -471,8 +483,8 @@ async def view_submission(ack, body, logger, client):
         date_msg = f"*DATE*: " + the_date
         ao_msg = f"*AO*: <#" + the_ao + ">"
         q_msg = f"*Q*: <@" + the_q + ">"
-        pax_msg = f"*PAX*: " + pax_formatted + ', ' + other_pax
-        fngs_msg = f"*FNGs*: " + fngs
+        pax_msg = f"*PAX*: " + pax_string
+        fngs_msg = f"*FNGs*: " + fng_string
         count_msg = f"*COUNT*: " + count
         moleskine_msg = moleskine
 
@@ -495,8 +507,8 @@ async def view_submission(ack, body, logger, client):
             date_msg = f"DATE: " + the_date
             ao_msg = f"AO: " + (ao_name or '').replace('the', '').title()
             q_msg = f"Q: " + q_name
-            pax_msg = f"PAX: " + pax_names + ", " + other_pax
-            fngs_msg = f"FNGs: " + fngs
+            pax_msg = f"PAX: " + pax_string
+            fngs_msg = f"FNGs: " + fng_string
             count_msg = f"COUNT: " + count
             moleskine_msg = moleskine
 
@@ -517,7 +529,7 @@ async def view_submission(ack, body, logger, client):
                 date=the_date, 
                 qic=q_name, 
                 ao=ao_name, 
-                pax=pax_names + ", " + other_pax, 
+                pax=pax_names, 
                 fngs=fngs, 
                 backblast=moleskine
             )
