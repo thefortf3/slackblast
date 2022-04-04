@@ -463,16 +463,17 @@ async def view_submission(ack, body, logger, client):
 
     fng_list = []
     fng_string = "0"
-    if fngs is not "None":
+    if fngs != "None":
         fng_list = fngs.split(',')
         fng_list = [s.strip() for s in fng_list]
         fng_string = str(len(fng_list)) + " " + ", ".join(fng_list)
 
     other_pax_list = []
     pax_string = pax_formatted
-    if other_pax is not "None":
+    if other_pax.strip() != "None":
         pax_string = pax_formatted + ", " + other_pax
         pax_names = pax_names + ", " + other_pax
+
     msg = ""
     try:
         # formatting a message
