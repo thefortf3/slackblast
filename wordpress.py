@@ -51,7 +51,8 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
     ao_id = getIdBySearch("categories", ao)
     if ao_id is None:
         ao_id = getIdFromCreate('categories', ao)
-    pax = pax + ", " + fngs
+    if fngs.strip() != "None":
+        pax = pax + ", " + fngs
     paxlist = str.split(pax, ",")
 
     tags = []

@@ -566,7 +566,7 @@ async def get_pax(pax):
     p = ""
     for x in pax:
         p += "<@" + x + "> "
-    return p
+    return p.strip()
 
 
 app = FastAPI()
