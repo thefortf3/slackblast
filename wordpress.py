@@ -62,7 +62,13 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
             tags.append(tag_id)
         else:
             tags.append(getIdFromCreate("tags", thepax.strip()))
-    
+            
+    qic_id = getIdBySearch("tags", qic.strip())
+    if  qic_id is not None:
+        tags.append(qic_id)
+    else:
+        tags.append(getIdFromCreate("tags", qic.strip()))
+
     post = {
         'title'    : title,
         'status'   : 'draft', 
