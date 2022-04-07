@@ -6,3 +6,4 @@ uvicorn<1
 uvloop
 httptools
 requests
+pytz
