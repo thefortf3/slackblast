@@ -76,7 +76,7 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
         'status'   : 'publish', 
         'content'  : backblast,
         'categories': ao_id, 
-        'date'   : datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
+        'date'   : datetime.now().strftime("%Y-%m-%d %H:%M:%S%z"), 
         'tags' : tags,
         'qic' : qic,
         'workout_date' : date
