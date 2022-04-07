@@ -23,7 +23,9 @@ def getIdBySearch(type, query):
     response_json = json.loads(response.content.decode('utf-8'))
     #print(json.dumps(response_json, indent=2))
     if len(response_json) > 0:
-        return response_json[0]['id']
+        for result in response_json:
+            if result['name'].lower() == query.lower():
+                return result['id']
     return None
 
 # Creates a tag/category and returns the ID from it.
@@ -71,7 +73,7 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
 
     post = {
         'title'    : title,
-        'status'   : 'draft', 
+        'status'   : 'publish', 
         'content'  : backblast,
         'categories': ao_id, 
         'date'   : datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 
