@@ -446,6 +446,9 @@ async def view_submission(ack, body, logger, client):
     email_to = safeget(result, "email", "email-action", "value")
     the_date = result["date"]["datepicker-action"]["selected_date"]
 
+    if the_q in pax:
+        pax.remove(the_q)
+
     pax_formatted = await get_pax(pax)
 
     logger.info(result)
@@ -461,16 +464,25 @@ async def view_submission(ack, body, logger, client):
     q_name = (await get_user_names([the_q], logger, client) or [''])[0]
     pax_names = ', '.join(await get_user_names(pax, logger, client) or [''])
 
+    # Clean up the fng list and format as expected by the miner.
     fng_list = []
     fng_string = "0"
     if fngs != "None":
         fng_list = fngs.split(',')
         fng_list = [s.strip() for s in fng_list]
+        while("" in fng_list) :
+            fng_list.remove("")
         fng_string = str(len(fng_list)) + " " + ", ".join(fng_list)
-
-    other_pax_list = []
+     
     pax_string = pax_formatted
     if other_pax.strip() != "None":
+        other_pax_list = []
+        other_pax_list = other_pax.split(',')
+        other_pax_list = [s.strip() for s in other_pax_list]
+        while("" in other_pax_list) :
+            other_pax_list.remove("")
+        other_pax = ", ".join(other_pax_list)
+        
         pax_string = pax_formatted + ", " + other_pax
         pax_names = pax_names + ", " + other_pax
 
