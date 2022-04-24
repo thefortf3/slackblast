@@ -48,7 +48,7 @@ def normalize(dirty_data):
 
 # Post the data to wordpress.  
 #  date: str in 'MM/DD/YYYY' format
-#  pax/fngs: comma separated list of names
+#  pax/fngs/qic: comma separated list of names
 def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
     ao = normalize(ao)
     ao_id = getIdBySearch("categories", ao)
@@ -57,6 +57,7 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
     if fngs.strip() != "None":
         pax = pax + ", " + fngs
     paxlist = str.split(pax, ",")
+    qlist = str.split(qic,",")
 
     tags = []
     for thepax in paxlist: 
@@ -65,12 +66,13 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
             tags.append(tag_id)
         else:
             tags.append(getIdFromCreate("tags", thepax.strip()))
-            
-    qic_id = getIdBySearch("tags", qic.strip())
-    if  qic_id is not None:
-        tags.append(qic_id)
-    else:
-        tags.append(getIdFromCreate("tags", qic.strip()))
+
+    for theq in qlist:
+        qic_id = getIdBySearch("tags", theq.strip())
+        if  qic_id is not None:
+            tags.append(qic_id)
+        else:
+            tags.append(getIdFromCreate("tags", theq.strip()))
 
     post = {
         'title'    : title,

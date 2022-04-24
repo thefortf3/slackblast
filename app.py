@@ -268,13 +268,13 @@ async def command(ack, body, respond, client, logger):
             "type": "input",
             "block_id": "the_q",
             "element": {
-                "type": "users_select",
+                "type": "multi_users_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Tag the Q",
+                    "text": "Tag the Q (or Qs)",
                     "emoji": True
                 },
-                "action_id": "users_select-action"
+                "action_id": "multi_users_select-action"
             },
             "label": {
                 "type": "plain_text",
@@ -368,28 +368,28 @@ async def command(ack, body, respond, client, logger):
                 "text": "The Moleskine",
                 "emoji": True
             }
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "section",
-            "block_id": "destination",
-            "text": {
-                "type": "plain_text",
-                "text": "Choose where to post this"
-            },
-            "accessory": {
-                "action_id": "destination-action",
-                "type": "static_select",
-                "placeholder": {
-                    "type": "plain_text",
-                    "text": "Choose where"
-                },
-                "initial_option": initial_channel_option,
-                "options": channel_options
-            }
-        }
+        }#,
+        #{
+        #    "type": "divider"
+        #},
+        # {
+        #     "type": "section",
+        #     "block_id": "destination",
+        #     "text": {
+        #         "type": "plain_text",
+        #         "text": "Choose where to post this"
+        #     },
+        #     "accessory": {
+        #         "action_id": "destination-action",
+        #         "type": "static_select",
+        #         "placeholder": {
+        #             "type": "plain_text",
+        #             "text": "Choose where"
+        #         },
+        #         "initial_option": initial_channel_option,
+        #         "options": channel_options
+        #     }
+        # }
     ]
 
     if config('EMAIL_TO', default='') and not config('EMAIL_OPTION_HIDDEN_IN_MODAL', default=False, cast=bool):
@@ -436,32 +436,34 @@ async def view_submission(ack, body, logger, client):
     result = body["view"]["state"]["values"]
     title = result["title"]["title"]["value"]
     the_ao = result["the_ao"]["channels_select-action"]["selected_channel"]
-    the_q = result["the_q"]["users_select-action"]["selected_user"]
+    the_q = result["the_q"]["multi_users_select-action"]["selected_users"]
     pax = result["the_pax"]["multi_users_select-action"]["selected_users"]
     fngs = result["fngs"]["fng-action"]["value"]
     other_pax = result["other_pax"]["others-action"]["value"]
     count = result["count"]["count-action"]["value"]
     moleskine = result["moleskine"]["plain_text_input-action"]["value"]
-    destination = result["destination"]["destination-action"]["selected_option"]["value"]
+    # destination = result["destination"]["destination-action"]["selected_option"]["value"]
     email_to = safeget(result, "email", "email-action", "value")
     the_date = result["date"]["datepicker-action"]["selected_date"]
 
-    if the_q in pax:
-        pax.remove(the_q)
+    for q in the_q:
+        if q in pax:
+            pax.remove(q)
 
     pax_formatted = await get_pax(pax)
+    q_formatted = await get_pax(the_q)
 
     logger.info(result)
 
-    chan = destination
-    if chan == 'THE_AO':
-        chan = the_ao
+    # chan = destination
+    # if chan == 'THE_AO':
+    chan = the_ao
 
-    logger.info('Channel to post to will be {} because the selected destination value was {} while the selected AO in the modal was {}'.format(
-        chan, destination, the_ao))
+    # logger.info('Channel to post to will be {} because the selected destination value was {} while the selected AO in the modal was {}'.format(
+    #     chan, destination, the_ao))
 
     ao_name = await get_channel_name(the_ao, logger, client)
-    q_name = (await get_user_names([the_q], logger, client) or [''])[0]
+    q_names = ', '.join(await get_user_names(the_q, logger, client) or [''])
     pax_names = ', '.join(await get_user_names(pax, logger, client) or [''])
 
     # Clean up the fng list and format as expected by the miner.
@@ -495,7 +497,7 @@ async def view_submission(ack, body, logger, client):
 
         date_msg = f"*DATE*: " + the_date
         ao_msg = f"*AO*: <#" + the_ao + ">"
-        q_msg = f"*Q*: <@" + the_q + ">"
+        q_msg = f"*Q*: " + str(q_formatted)
         pax_msg = f"*PAX*: " + pax_string
         fngs_msg = f"*FNGs*: " + fng_string
         count_msg = f"*COUNT*: " + count
@@ -519,7 +521,7 @@ async def view_submission(ack, body, logger, client):
 
             date_msg = f"DATE: " + the_date
             ao_msg = f"AO: " + (ao_name or '').replace('the', '').title()
-            q_msg = f"Q: " + q_name
+            q_msg = f"Q: " + q_names
             pax_msg = f"PAX: " + pax_string
             fngs_msg = f"FNGs: " + fng_string
             count_msg = f"COUNT: " + count
@@ -540,7 +542,7 @@ async def view_submission(ack, body, logger, client):
             result = wordpress.postToWordpress(
                 title=title, 
                 date=the_date, 
-                qic=q_name, 
+                qic=q_names, 
                 ao=ao_name, 
                 pax=pax_names, 
                 fngs=fngs, 
