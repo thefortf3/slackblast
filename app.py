@@ -72,21 +72,22 @@ async def handle_app_home_opened_events(client, event, logger):
             # Home tabs must be enabled in your app configuration
             view={
                 "type": "home",
+                "callback_id": "home_view",
                 "blocks": [
                     {
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
                             "text": "*Welcome to the SlackBlaster, <@" + event["user"] + ">!*"
-                        }
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                          "type": "plain_text",
-                          "text": "Create a Slackblast"
                         },
-                        "action_id": "action_create_slackblast"
+                        "accessory": {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Create a Slackblast"
+                            },
+                            "action_id": "action_create_slackblast"
+                        }
                     }
                 ]
             }
