@@ -66,7 +66,7 @@ async def handle_app_home_opened_events(client, event, logger):
     logger.info("Home Opened")
     try:
         # Call views.publish with the built-in client
-        client.views_publish(
+        await client.views_publish(
             # Use the user ID associated with the event
             user_id=event["user"],
             # Home tabs must be enabled in your app configuration
@@ -79,15 +79,15 @@ async def handle_app_home_opened_events(client, event, logger):
                         "text": {
                             "type": "mrkdwn",
                             "text": "*Welcome to the SlackBlaster, <@" + event["user"] + ">!*"
-                        },
-                        "accessory": {
-                            "type": "button",
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Create a Slackblast"
-                            },
-                            "action_id": "action_create_slackblast"
-                        }
+                        } #,
+                        # "accessory": {
+                        #     "type": "button",
+                        #     "text": {
+                        #         "type": "plain_text",
+                        #         "text": "Create a Slackblast"
+                        #     },
+                        #     "action_id": "action_create_slackblast"
+                        # }
                     }
                 ]
             }
