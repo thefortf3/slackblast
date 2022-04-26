@@ -61,6 +61,39 @@ async def event_test(body, say, logger):
 async def handle_message():
     pass
 
+@slack_app.event("app_home_opened")
+async def handle_app_home_opened_events(client, event, logger):
+    logger.info("Home Opened")
+    try:
+        # Call views.publish with the built-in client
+        client.views_publish(
+            # Use the user ID associated with the event
+            user_id=event["user"],
+            # Home tabs must be enabled in your app configuration
+            view={
+                "type": "home",
+                "blocks": [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "*Welcome to the SlackBlaster, <@" + event["user"] + ">!*"
+                        }
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                          "type": "plain_text",
+                          "text": "Create a Slackblast"
+                        },
+                        "action_id": "action_create_slackblast"
+                    }
+                ]
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error publishing home tab: {e}")
+
 
 def safeget(dct, *keys):
     for key in keys:
