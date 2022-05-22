@@ -100,8 +100,8 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast, preblast=False):
     # print(str(tags))
     #response = requests.get(url + "&status=draft", headers=headers)
     url = base_url + "posts"
-    #response = requests.post(url, headers=headers, json=post)
-    #response_json = json.loads(response.content.decode('utf-8'))
-    #return response_json
-    return post
+    response = requests.post(url, headers=headers, json=post)
+    response_json = json.loads(response.content.decode('utf-8'))
+    return response_json
+    
 
