@@ -38,7 +38,7 @@ def getIdFromCreate(type, name):
     #print(json.dumps(response_json, indent=2))
     if 'id' in response_json:
         return response_json['id']
-    raise Exception("Unable to create " + type + "error was: \n" + json.dumps(response_json, indent=2))
+    raise Exception("Unable to create " + type + " error was: \n" + json.dumps(response_json, indent=2))
     
 # Normalize the string we search for (AO specific naming convention here)
 def normalize(dirty_data):
@@ -49,23 +49,35 @@ def normalize(dirty_data):
 # Post the data to wordpress.  
 #  date: str in 'MM/DD/YYYY' format
 #  pax/fngs/qic: comma separated list of names
-def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
+def postToWordpress(title, date, qic, ao, pax, fngs, backblast, preblast=False):
     ao = normalize(ao)
     ao_id = getIdBySearch("categories", ao)
+    qlist = str.split(qic,",")
+    tags = []
+
     if ao_id is None:
         ao_id = getIdFromCreate('categories', ao)
-    if fngs.strip() != "None":
-        pax = pax + ", " + fngs
-    paxlist = str.split(pax, ",")
-    qlist = str.split(qic,",")
+    if preblast:
+        pb_id = getIdBySearch('categories', "Pre-Blast")
+        if pb_id is None:
+            raise Exception("Unable to find pre-blast category")
+        new_ids = []
+        new_ids.append(pb_id)
+        new_ids.append(ao_id)
+        ao_id = new_ids
 
-    tags = []
-    for thepax in paxlist: 
-        tag_id = getIdBySearch("tags", thepax.strip())
-        if  tag_id is not None:
-            tags.append(tag_id)
-        else:
-            tags.append(getIdFromCreate("tags", thepax.strip()))
+    else:
+        if fngs.strip() != "None":
+            pax = pax + ", " + fngs
+        paxlist = str.split(pax, ",")
+        
+        for thepax in paxlist: 
+            if thepax.strip() != "":
+                tag_id = getIdBySearch("tags", thepax.strip())
+                if  tag_id is not None:
+                    tags.append(tag_id)
+                else:
+                    tags.append(getIdFromCreate("tags", thepax.strip()))
 
     for theq in qlist:
         qic_id = getIdBySearch("tags", theq.strip())
@@ -88,7 +100,8 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast):
     # print(str(tags))
     #response = requests.get(url + "&status=draft", headers=headers)
     url = base_url + "posts"
-    response = requests.post(url, headers=headers, json=post)
-    response_json = json.loads(response.content.decode('utf-8'))
-    return response_json
+    #response = requests.post(url, headers=headers, json=post)
+    #response_json = json.loads(response.content.decode('utf-8'))
+    #return response_json
+    return post
 

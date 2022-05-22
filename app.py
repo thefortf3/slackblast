@@ -148,6 +148,193 @@ async def get_user_names(array_of_user_ids, logger, client):
     return names
 
 
+@slack_app.command("/preblast")
+async def preblast(ack, body, respond, client, logger):
+    await ack()
+    today = datetime.now(timezone.utc).astimezone()
+    today = today - timedelta(hours=6)
+    datestring = today.strftime("%Y-%m-%d")
+
+    blocks = [
+        {
+            "type": "input",
+            "block_id": "title",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "title",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Snarky Title?"
+                }
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Title"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "the_ao",
+            "element": {
+                "type": "channels_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Channel to post the Pre-Blast to",
+                    "emoji": True
+                },
+                "action_id": "channels_select-action"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Pre-Blast Channel",
+                "emoji": True
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "date",
+            "element": {
+                "type": "datepicker",
+                "initial_date": datestring,
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select a date",
+                    "emoji": True
+                },
+                "action_id": "datepicker-action"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Event Date",
+                "emoji": True
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "the_q",
+            "element": {
+                "type": "multi_users_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Tag the Q (or Qs)",
+                    "emoji": True
+                },
+                "action_id": "multi_users_select-action"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "The Q",
+                "emoji": True
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "moleskine",
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "plain_text_input-action",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Tell us what's happening\n\n"
+                }
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "The Details",
+                "emoji": True
+            }
+        }
+    ]
+
+
+    res = await client.views_open(
+        trigger_id=body["trigger_id"],
+        view={
+            "type": "modal",
+            "callback_id": "preblast-id",
+            "title": {
+                "type": "plain_text",
+                "text": "Create a Pre-Blast"
+            },
+            "submit": {
+                "type": "plain_text",
+                "text": "Submit"
+            },
+            "blocks": blocks
+        },
+    )
+    logger.info(res)
+
+
+
+@slack_app.view("preblast-id")
+async def view_preblast_submission(ack, body, logger, client):
+    await ack()
+    result = body["view"]["state"]["values"]
+    title = result["title"]["title"]["value"]
+    the_ao = result["the_ao"]["channels_select-action"]["selected_channel"]
+    the_q = result["the_q"]["multi_users_select-action"]["selected_users"]
+    moleskine = result["moleskine"]["plain_text_input-action"]["value"]
+    the_date = result["date"]["datepicker-action"]["selected_date"]
+
+    q_formatted = await get_pax(the_q)
+
+    logger.info(result)
+
+    # chan = destination
+
+    chan = the_ao
+
+    # logger.info('Channel to post to will be {} because the selected destination value was {} while the selected AO in the modal was {}'.format(
+    #     chan, destination, the_ao))
+
+    ao_name = await get_channel_name(the_ao, logger, client)
+    q_names = ', '.join(await get_user_names(the_q, logger, client) or [''])
+     
+    msg = ""
+    try:
+        # formatting a message
+        # todo: change to use json object
+        header_msg = f"*Pre-Blast*: "
+        title_msg = f"*" + title + "*"
+
+        date_msg = f"*DATE*: " + the_date
+        q_msg = f"*Q*: " + str(q_formatted)
+
+        moleskine_msg = moleskine
+
+        # Message the user via the app/bot name
+        if config('POST_TO_CHANNEL', cast=bool):
+            body = make_body(date_msg, None, q_msg, None,
+                             None, None, moleskine_msg, True)
+            msg = header_msg + "\n" + title_msg + "\n" + body
+            await client.chat_postMessage(channel=chan, text=msg)
+            logger.info('\nMessage posted to Slack! \n{}'.format(msg))
+    except Exception as slack_bolt_err:
+        logger.error('Error with posting Slack message with chat_postMessage: {}'.format(
+            slack_bolt_err))
+        # Try again and bomb out without attempting to send email
+        await client.chat_postMessage(channel=chan, text='There was an error with your submission: {}'.format(slack_bolt_err))
+    
+    try:
+        if config("WORDPRESS_BASE_URL", OPTIONAL_INPUT_VALUE) != OPTIONAL_INPUT_VALUE:
+            result = wordpress.postToWordpress(
+                title=title, 
+                date=the_date, 
+                qic=q_names, 
+                ao=ao_name, 
+                pax=None, 
+                fngs=None, 
+                backblast=moleskine,
+                preblast=True
+            )
+            logger.info("Poest to Wordpress result: {}".format(json.dumps(result, indent=2)))
+    except Exception as wordpress_err:
+        logger.error("Error with wordpress: {}".format(wordpress_err))
+        
+
+
 @slack_app.command("/slackblast")
 @slack_app.command("/backblast")
 async def command(ack, body, respond, client, logger):
@@ -588,15 +775,18 @@ async def view_submission(ack, body, logger, client):
         
 
 
-def make_body(date, ao, q, pax, fngs, count, moleskine):
+def make_body(date, ao, q, pax, fngs, count, moleskine, preblast=False):
+    if not preblast:
+        return date + \
+            "\n" + ao + \
+            "\n" + q + \
+            "\n" + pax + \
+            "\n" + fngs + \
+            "\n" + count + \
+            "\n" + moleskine
     return date + \
-        "\n" + ao + \
         "\n" + q + \
-        "\n" + pax + \
-        "\n" + fngs + \
-        "\n" + count + \
         "\n" + moleskine
-
 
 # @slack_app.options("es_categories")
 # async def show_categories(ack, body, logger):
