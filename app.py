@@ -455,14 +455,14 @@ async def command(ack, body, respond, client, logger):
                 "type": "channels_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Select the AO",
+                    "text": "Select the AO (NOT #backblasts)",
                     "emoji": True
                 },
                 "action_id": "channels_select-action"
             },
             "label": {
                 "type": "plain_text",
-                "text": "The AO",
+                "text": "The AO (#ao-)",
                 "emoji": True
             }
         },
