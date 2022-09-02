@@ -5,11 +5,11 @@ from slack_bolt.adapter.fastapi.async_handler import AsyncSlackRequestHandler
 from slack_bolt.async_app import AsyncApp
 import wordpress
 import datetime
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, tzinfo
 import json
-
+import requests
 import sendmail
-
+import pytz
 
 # def get_categories():
 #     with open('categories.json') as c:
@@ -61,9 +61,11 @@ async def event_test(body, say, logger):
 async def handle_message():
     pass
 
+
 @slack_app.event("app_home_opened")
 async def handle_app_home_opened_events(client, event, logger):
     logger.info("Home Opened")
+    await get_qs(logger)
     try:
         # Call views.publish with the built-in client
         await client.views_publish(
@@ -71,23 +73,37 @@ async def handle_app_home_opened_events(client, event, logger):
             user_id=event["user"],
             # Home tabs must be enabled in your app configuration
             view={
-                "type": "home",
-                "callback_id": "home_view",
-                "blocks": [
+                "type":"home",
+                "blocks":[
                     {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*Welcome to the SlackBlaster, <@" + event["user"] + ">!*"
-                        } #,
-                        # "accessory": {
-                        #     "type": "button",
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "Create a Slackblast"
-                        #     },
-                        #     "action_id": "action_create_slackblast"
-                        # }
+                        "type":"section",
+                        "text":{
+                            "type":"mrkdwn",
+                            "text":"Here's what I can do:"
+                        }
+                    },
+                    {
+                        "type":"actions",
+                        "elements":[
+                            {
+                            "type":"button",
+                            "action_id": "slackblast",
+                            "text":{
+                                "type":"plain_text",
+                                "text":"Write a Backblast",
+                                "emoji":True
+                            }
+                            },
+                            {
+                            "type":"button",
+                            "action_id": "preblast",
+                            "text":{
+                                "type":"plain_text",
+                                "text":"Write a Pre-blast",
+                                "emoji":True
+                            }
+                            }
+                        ]
                     }
                 ]
             }
@@ -147,6 +163,9 @@ async def get_user_names(array_of_user_ids, logger, client):
     logger.info('names are {}'.format(names))
     return names
 
+@slack_app.action("preblast")
+async def preblast_action(ack, body, respond, client, logger):
+    await preblast(ack, body, respond, client, logger)
 
 @slack_app.command("/preblast")
 async def preblast(ack, body, respond, client, logger):
@@ -334,6 +353,9 @@ async def view_preblast_submission(ack, body, logger, client):
         logger.error("Error with wordpress: {}".format(wordpress_err))
         
 
+@slack_app.action("slackblast")
+async def slackblast_action(ack, body, respond, client, logger):
+    await command(ack, body, respond, client, logger)
 
 @slack_app.command("/slackblast")
 @slack_app.command("/backblast")
@@ -788,6 +810,23 @@ def make_body(date, ao, q, pax, fngs, count, moleskine, preblast=False):
         "\n" + q + \
         "\n" + moleskine
 
+async def get_qs(logger):
+    url = "http://thefortservices.azurewebsites.net/api/events"
+    response = requests.get(url)
+    response_json = json.loads(response.content.decode('utf-8'))
+    for event in response_json:
+        # Get the date in a nice way
+        strdate = event['date'][0:-1] + "000GMT"
+        date = datetime.fromisoformat(event['date'][0:-1])
+        
+        date = date.replace(tzinfo=timezone.utc).astimezone(pytz.timezone("US/Eastern"))
+
+        # date = datetime.strptime(strdate, "%Y-%d-%mT%H:%M:%S.%f%Z")
+        logger.info("Date = " + datetime.strftime(date, "%A (%b %d) - %H%M"))
+
+
+    
+    
 # @slack_app.options("es_categories")
 # async def show_categories(ack, body, logger):
 #     await ack()
