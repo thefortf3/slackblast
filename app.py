@@ -7,6 +7,7 @@ import wordpress
 import datetime
 from datetime import datetime, timezone, timedelta
 import json
+import requests
 
 import sendmail
 
@@ -769,7 +770,7 @@ async def view_submission(ack, body, logger, client):
         fngs_msg = f"*FNGs*: " + fng_string
         count_msg = f"*COUNT*: " + count
         moleskine_msg = moleskine
-
+        
         # Message the user via the app/bot name
         if config('POST_TO_CHANNEL', cast=bool):
             body = make_body(date_msg, ao_msg, q_msg, pax_msg,
@@ -782,6 +783,20 @@ async def view_submission(ack, body, logger, client):
             slack_bolt_err))
         # Try again and bomb out without attempting to send email
         await client.chat_postMessage(channel=chan, text='There was an error with your submission: {}'.format(slack_bolt_err))
+    
+    try:
+        if isvq and config("VQ_URL", OPTIONAL_INPUT_VALUE) != OPTIONAL_INPUT_VALUE:
+            vq_url = config("VQ_URL")
+            for vqpax in q_names.split(", "):
+                postdata = {}
+                postdata["ao"] = ao_name
+                postdata["pax"] = vqpax
+                postdata["date"] = the_date                
+                requests.post(vq_url, data=postdata)
+    except Exception as vqerr:
+        logger.error("Error posting the VQ {}".format(
+            vqerr))
+        
     try:
         if email_to and email_to != OPTIONAL_INPUT_VALUE:
             subject = title
