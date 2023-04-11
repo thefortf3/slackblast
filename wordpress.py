@@ -4,10 +4,11 @@ import json
 import base64
 import pytz
 from datetime import datetime
+OPTIONAL_INPUT_VALUE = "None"
 
-app_pass = config("WORDPRESS_APP_PASSWORD")
-app_user = config("WORDPRESS_USER")
-base_url= config("WORDPRESS_BASE_URL")
+app_pass = config("WORDPRESS_APP_PASSWORD", OPTIONAL_INPUT_VALUE)
+app_user = config("WORDPRESS_USER", OPTIONAL_INPUT_VALUE)
+base_url= config("WORDPRESS_BASE_URL", OPTIONAL_INPUT_VALUE)
 creds = app_user + ":" + app_pass
 token = base64.b64encode(creds.encode())
 

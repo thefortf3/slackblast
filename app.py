@@ -504,6 +504,42 @@ async def command(ack, body, respond, client, logger):
             }
         },
         {
+			"type": "section",
+            "block_id": "is_vq",
+			"accessory": {
+				"type": "static_select",
+                "initial_option": {
+                    "text": {
+                        "type": "plain_text",
+                        "text": "No"
+                    },
+                    "value": "no"
+                },
+				"options": [
+					{
+						"text": {
+							"type": "plain_text",
+							"text": "No"
+						},
+						"value": "no"
+					},
+                    {
+						"text": {
+							"type": "plain_text",
+							"text": "Yes"
+						},
+						"value": "yes"
+					}
+                    
+				],
+                "action_id": "vq_select-action"
+			},
+			"text": {
+				"type": "plain_text",
+				"text": "Was this a VQ?",				
+			}
+        },
+        {
             "type": "input",
             "block_id": "the_pax",
             "element": {
@@ -651,6 +687,12 @@ async def command(ack, body, respond, client, logger):
     logger.info(res)
 
 
+@slack_app.action("vq_select-action")
+async def handle_some_action(ack, body, logger):
+    await ack()
+    #logger.info(body)
+    
+
 @slack_app.view("backblast-id")
 async def view_submission(ack, body, logger, client):
     await ack()
@@ -663,6 +705,7 @@ async def view_submission(ack, body, logger, client):
     other_pax = result["other_pax"]["others-action"]["value"]
     count = result["count"]["count-action"]["value"]
     moleskine = result["moleskine"]["plain_text_input-action"]["value"]
+    isvq = result["is_vq"]["vq_select-action"]["selected_option"]["value"]
     # destination = result["destination"]["destination-action"]["selected_option"]["value"]
     email_to = safeget(result, "email", "email-action", "value")
     the_date = result["date"]["datepicker-action"]["selected_date"]
@@ -673,6 +716,9 @@ async def view_submission(ack, body, logger, client):
 
     pax_formatted = await get_pax(pax)
     q_formatted = await get_pax(the_q)
+    isvq = (isvq == "yes")
+
+    logger.info("Is VQ? - " + str(isvq))
 
     logger.info(result)
 
