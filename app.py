@@ -706,7 +706,9 @@ async def view_submission(ack, body, logger, client):
     other_pax = result["other_pax"]["others-action"]["value"]
     count = result["count"]["count-action"]["value"]
     moleskine = result["moleskine"]["plain_text_input-action"]["value"]
-    isvq = result["is_vq"]["vq_select-action"]["selected_option"]["value"]
+    isvq = "no"
+    if result["is_vq"]["vq_select-action"]["selected_option"] is not None:
+        isvq = result["is_vq"]["vq_select-action"]["selected_option"]["value"]
     # destination = result["destination"]["destination-action"]["selected_option"]["value"]
     email_to = safeget(result, "email", "email-action", "value")
     the_date = result["date"]["datepicker-action"]["selected_date"]
