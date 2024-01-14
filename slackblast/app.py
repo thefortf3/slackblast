@@ -33,10 +33,19 @@ app = App(process_before_response=True, oauth_flow=get_oauth_flow())
 
 
 def handler(event, context):
+    print('## ENVIRONMENT VARIABLES')
+    print(os.environ['AWS_LAMBDA_LOG_GROUP_NAME'])
+    print(os.environ['AWS_LAMBDA_LOG_STREAM_NAME'])
+    print('## EVENT')
+    print(event)
     if event.get("path") == "/exchange_token":
         return strava_exchange_token(event, context)
+    logger.debug("context is {}".format(context))
+    logger.debug("event is {}".format(event))
     slack_handler = SlackRequestHandler(app=app)
-    return slack_handler.handle(event, context)
+    response = slack_handler.handle(event, context)
+    print(response)
+    return response
 
 
 def respond_to_command(
@@ -46,6 +55,7 @@ def respond_to_command(
     client,
     context,
 ):
+    print("HEREHERE")
     ack()
     logger.debug("body is {}".format(body))
     logger.debug("context is {}".format(context))
@@ -59,10 +69,10 @@ def respond_to_command(
 
     region_record = get_region_record(team_id, body, context, client, logger)
 
-    if safe_get(body, "command") == "/config-slackblast":
+    if safe_get(body, "command") == "/dev-config-slackblast":
         builders.build_config_form(client, trigger_id, region_record, logger)
 
-    elif safe_get(body, "command") == "/slackblast" or safe_get(body, "command") == "/backblast":
+    elif safe_get(body, "command") == "/dev-slackblast" or safe_get(body, "command") == "/dev-backblast":
         builders.build_backblast_form(
             user_id=user_id,
             channel_id=channel_id,
@@ -75,7 +85,7 @@ def respond_to_command(
             trigger_id=trigger_id,
         )
 
-    elif safe_get(body, "command") == "/preblast":
+    elif safe_get(body, "command") == "/dev-preblast":
         builders.build_preblast_form(
             user_id,
             channel_id,

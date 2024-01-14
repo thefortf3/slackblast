@@ -14,8 +14,9 @@ from utilities.helper_functions import (
     get_channel_name,
 )
 from utilities.slack import actions
-from utilities.database.orm import Attendance, Backblast, PaxminerAO, PaxminerUser, Region
+from utilities.database.orm import Attendance, Backblast, VQ, PaxminerAO, PaxminerUser, Region
 from utilities.database import DbManager
+from utilities.wordpress import postToWordpress
 from cryptography.fernet import Fernet
 
 
@@ -35,8 +36,10 @@ def handle_backblast_post(
     count = safe_get(backblast_data, actions.BACKBLAST_COUNT)
     moleskin = safe_get(backblast_data, actions.BACKBLAST_MOLESKIN)
     destination = safe_get(backblast_data, actions.BACKBLAST_DESTINATION)
-    email_send = safe_get(backblast_data, actions.BACKBLAST_EMAIL_SEND)
     ao = safe_get(backblast_data, actions.BACKBLAST_AO)
+    is_vq = safe_get(backblast_data, actions.BACKBLAST_VQ)
+
+    is_vq = (is_vq == "yes")
 
     user_id = safe_get(body, "user_id") or safe_get(body, "user", "id")
 
@@ -51,9 +54,8 @@ def handle_backblast_post(
             PaxminerAO, filters=[True], schema=region_record.paxminer_schema
         )
 
-    chan = destination
-    if chan == "The_AO":
-        chan = the_ao
+    
+    chan = the_ao
 
     if create_or_edit == "edit":
         message_metadata = body["view"]["blocks"][-1]["elements"][0]["text"]
@@ -182,59 +184,43 @@ def handle_backblast_post(
                 {"event_type": "successful_slack_post", "team_name": region_record.workspace_name}
             )
         )
-        if (email_send and email_send == "yes") or (
-            email_send is None and region_record.email_enabled == 1
-        ):
-            moleskin_msg = moleskin.replace("*", "")
-
-            if region_record.postie_format:
-                subject = f"[{ao_name}] {title}"
-                moleskin_msg += f"\n\nTags: {ao_name}, {pax_names}"
-            else:
-                subject = title
-
-            email_msg = f"""Date: {the_date}
-AO: {ao_name}
-Q: {q_name} {the_coqs_names}
-PAX: {pax_names}
-FNGs: {fngs_formatted}
-COUNT: {count}
-{moleskin_msg}
-            """
-
-            try:
-                # Decrypt password
-                fernet = Fernet(os.environ[constants.PASSWORD_ENCRYPT_KEY].encode())
-                email_password_decrypted = fernet.decrypt(
-                    region_record.email_password.encode()
-                ).decode()
-                sendmail.send(
-                    subject=subject,
-                    body=email_msg,
-                    email_server=region_record.email_server,
-                    email_server_port=region_record.email_server_port,
-                    email_user=region_record.email_user,
-                    email_password=email_password_decrypted,
-                    email_to=region_record.email_to,
+        try:
+            if is_vq:
+                DbManager.create_record(
+                    schema=region_record.paxminer_schema,
+                    record=VQ(
+                        date=the_date,
+                        name=q_name,
+                        ao=ao_name,                    
+                    ),
                 )
-                logger.debug("\nEmail Sent! \n{}".format(email_msg))
-                print(
-                    json.dumps(
-                        {
-                            "event_type": "successful_email_sent",
-                            "team_name": region_record.workspace_name,
-                        }
-                    )
+        except Exception as e:
+            logger.error("Error saving VQ to database: {}".format(e))
+            client.chat_postMessage(
+                channel=context["user_id"],
+                text=f"WARNING: The VQ could not be saved to the database.  This may not be their VQ.",
+            )
+            print(
+                json.dumps(
+                    {"event_type": "failed_db_insert", "team_name": region_record.workspace_name}
                 )
-            except Exception as sendmail_err:
-                logger.error("Error with sendmail: {}".format(sendmail_err))
-                logger.debug("\nEmail Sent! \n{}".format(email_msg))
-                print(
-                    json.dumps(
-                        {"event_type": "failed_email", "team_name": region_record.workspace_name}
-                    )
-                )
+            )
 
+
+        try:
+            result = postToWordpress(
+                title=title, 
+                date=the_date, 
+                qic=q_name + the_coqs_names, 
+                ao=ao_name, 
+                pax=pax_names, 
+                fngs=fngs, 
+                backblast=moleskin
+            )
+            logger.info("Poest to Wordpress result: {}".format(json.dumps(result, indent=2)))
+        except Exception as wordpress_err:
+            logger.error("Error with wordpress: {}".format(wordpress_err))
+                
     elif create_or_edit == "edit":
         res = client.chat_update(
             channel=message_channel,
@@ -271,6 +257,7 @@ COUNT: {count}
 
     res_link = client.chat_getPermalink(channel=chan or message_channel, message_ts=res["ts"])
 
+
     if region_record.paxminer_schema is not None:
         try:
             DbManager.create_record(
@@ -288,6 +275,7 @@ COUNT: {count}
                     fng_count=fng_count,
                 ),
             )
+
 
             attendance_records = []
             for pax_id in list(set(pax) | set(the_coq or []) | set([the_q])):
@@ -342,13 +330,9 @@ def handle_preblast_post(ack, body, logger, client, context, preblast_data) -> s
     title = safe_get(preblast_data, actions.PREBLAST_TITLE)
     the_date = safe_get(preblast_data, actions.PREBLAST_DATE)
     the_time = safe_get(preblast_data, actions.PREBLAST_TIME)
-    the_ao = safe_get(preblast_data, actions.PREBLAST_AO)
+    the_ao = safe_get(preblast_data, actions.PREBLAST_DESTINATION)
     the_q = safe_get(preblast_data, actions.PREBLAST_Q)
-    the_why = safe_get(preblast_data, actions.PREBLAST_WHY)
-    fngs = safe_get(preblast_data, actions.PREBLAST_FNGS)
-    coupons = safe_get(preblast_data, actions.PREBLAST_COUPONS)
     moleskin = safe_get(preblast_data, actions.PREBLAST_MOLESKIN)
-    destination = safe_get(preblast_data, actions.PREBLAST_DESTINATION)
 
     region_record: Region = DbManager.get_record(Region, id=context["team_id"])
     user_records = None
@@ -357,29 +341,27 @@ def handle_preblast_post(ack, body, logger, client, context, preblast_data) -> s
             PaxminerUser, filters=[True], schema=region_record.paxminer_schema
         )
 
-    chan = destination
-    if chan == "The_AO":
-        chan = the_ao
+    chan = the_ao
+    ao_name = get_channel_name(the_ao, logger, client, region_record)
 
-    q_name, q_url = get_user_names(
-        [the_q], logger, client, return_urls=True, user_records=user_records
+    the_qs_formatted = get_pax(the_q)
+    the_qs_full_list = [the_qs_formatted]
+    the_qs_names_list = get_user_names(
+        the_q, logger, client, return_urls=False, user_records=user_records
     )
+    the_qs_formatted = ", " + ", ".join(the_qs_full_list)
+    the_qs_names = ", " + ", ".join(the_qs_names_list)
     q_name = (q_name or [""])[0]
     q_url = q_url[0]
 
     header_msg = f"*Preblast: " + title + "*"
     date_msg = f"*Date*: " + the_date
     time_msg = f"*Time*: " + the_time
-    ao_msg = f"*Where*: <#" + the_ao + ">"
+    # ao_msg = f"*Where*: <#" + the_ao + ">"
     q_msg = f"*Q*: <@" + the_q + ">"  # + the_coqs_formatted
 
-    body_list = [header_msg, date_msg, time_msg, ao_msg, q_msg]
-    if the_why:
-        body_list.append(f"*Why*: " + the_why)
-    if coupons:
-        body_list.append(f"*Coupons*: " + coupons)
-    if fngs:
-        body_list.append(f"*FNGs*: " + fngs)
+    body_list = [header_msg, date_msg, time_msg, q_msg]
+
     if moleskin:
         body_list.append(moleskin)
 
@@ -393,6 +375,21 @@ def handle_preblast_post(ack, body, logger, client, context, preblast_data) -> s
             {"event_type": "successful_preblast_post", "team_name": region_record.workspace_name}
         )
     )
+
+    try:
+        result = postToWordpress(
+            title=title, 
+            date=the_date, 
+            qic=the_qs_names, 
+            ao=ao_name, 
+            pax=None, 
+            fngs=None, 
+            backblast=moleskin,
+            preblast=True
+        )
+        logger.info("Poest to Wordpress result: {}".format(json.dumps(result, indent=2)))
+    except Exception as wordpress_err:
+        logger.error("Error with wordpress: {}".format(wordpress_err))
 
 
 def handle_config_post(ack, body, logger, client, context, config_data) -> str:

@@ -3,12 +3,14 @@ import requests
 import json
 import base64
 import pytz
+from utilities import constants
+import os
 from datetime import datetime
 OPTIONAL_INPUT_VALUE = "None"
 
-app_pass = config("WORDPRESS_APP_PASSWORD", OPTIONAL_INPUT_VALUE)
-app_user = config("WORDPRESS_USER", OPTIONAL_INPUT_VALUE)
-base_url= config("WORDPRESS_BASE_URL", OPTIONAL_INPUT_VALUE)
+app_pass = os.environ.get(constants.WORDPRESS_APP_PASSWORD, "123")
+app_user = os.environ.get(constants.WORDPRESS_USER, "123")
+base_url= os.environ.get(constants.WORDPRESS_BASE_URL, "123")
 creds = app_user + ":" + app_pass
 token = base64.b64encode(creds.encode())
 
@@ -51,6 +53,9 @@ def normalize(dirty_data):
 #  date: str in 'MM/DD/YYYY' format
 #  pax/fngs/qic: comma separated list of names
 def postToWordpress(title, date, qic, ao, pax, fngs, backblast, preblast=False):
+    if base_url == "123" or base_url is None:
+        retval = {"error" : "Wordpress was not configured"}
+        return retval
     ao = normalize(ao)
     ao_id = getIdBySearch("categories", ao)
     qlist = str.split(qic,",")
@@ -68,7 +73,7 @@ def postToWordpress(title, date, qic, ao, pax, fngs, backblast, preblast=False):
         ao_id = new_ids
 
     else:
-        if fngs.strip() != "None":
+        if fngs is not None and fngs.strip() != "None":
             pax = pax + ", " + fngs
         paxlist = str.split(pax, ",")
         

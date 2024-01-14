@@ -27,7 +27,7 @@ class GetDBClass:
 
 
 class Region(BaseClass, GetDBClass):
-    __tablename__ = "regions"
+    __tablename__ = "sb_regions"
     id = Column("id", Integer, primary_key=True)
     team_id = Column("team_id", String(100))
     workspace_name = Column("workspace_name", String(100))
@@ -54,6 +54,17 @@ class Region(BaseClass, GetDBClass):
     def get_id():
         return Region.team_id
 
+class VQ(BaseClass, GetDBClass):
+    __tablename__ = "vqs"
+    date = Column("date", Date)
+    name = Column("name", String(45), primary_key=True)
+    ao = Column("ao", String(45))
+    
+    def get_id(self):
+        return self.name
+
+    def get_id():
+        return VQ.name
 
 class Backblast(BaseClass, GetDBClass):
     __tablename__ = "beatdowns"

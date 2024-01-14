@@ -14,10 +14,10 @@ BACKBLAST_FORM = orm.BlockView(
             element=orm.PlainTextInputElement(placeholder="Enter a workout title..."),
         ),
         orm.InputBlock(
-            label="The AO",
+            label="The AO (#ao-)",
             action=actions.BACKBLAST_AO,
             optional=False,
-            element=orm.ChannelsSelectElement(placeholder="Select the AO..."),
+            element=orm.ChannelsSelectElement(placeholder="Select the AO... (NOT #backblasts/1st-f)"),
             dispatch_action=True,
         ),
         orm.InputBlock(
@@ -43,6 +43,17 @@ BACKBLAST_FORM = orm.BlockView(
             action=actions.BACKBLAST_COQ,
             optional=True,
             element=orm.MultiUsersSelectElement(placeholder="Select the CoQ(s)..."),
+        ),
+        orm.InputBlock(
+            label="Was this a VQ?",
+            action=actions.BACKBLAST_VQ,
+            optional=False,
+            element=orm.RadioButtonsElement(
+                options=orm.as_selector_options(
+                    names=["Yes", "No"], values=["yes", "no"]
+                ),
+                initial_value="no",
+            ),
         ),
         orm.InputBlock(
             label="The PAX",
@@ -88,23 +99,23 @@ BACKBLAST_FORM = orm.BlockView(
             text="If trying to tag PAX in here, substitute _ for spaces and do not include titles in parenthesis (ie, @Moneyball not @Moneyball_(F3_STC)). Spelling is important, capitalization is not!"
         ),
         orm.DividerBlock(),
-        orm.InputBlock(
-            label="Choose where to post this",
-            action=actions.BACKBLAST_DESTINATION,
-            optional=False,
-            element=orm.StaticSelectElement(placeholder="Select a destination..."),
-        ),
-        orm.InputBlock(
-            label="Email Backblast (to Wordpress, etc)",
-            action=actions.BACKBLAST_EMAIL_SEND,
-            optional=False,
-            element=orm.RadioButtonsElement(
-                options=orm.as_selector_options(
-                    names=["Send Email", "Don't Send Email"], values=["yes", "no"]
-                ),
-                initial_value="yes",
-            ),
-        ),
+        # orm.InputBlock(
+        #     label="Choose where to post this",
+        #     action=actions.BACKBLAST_DESTINATION,
+        #     optional=False,
+        #     element=orm.StaticSelectElement(placeholder="Select a destination..."),
+        # ),
+        # orm.InputBlock(
+        #     label="Email Backblast (to Wordpress, etc)",
+        #     action=actions.BACKBLAST_EMAIL_SEND,
+        #     optional=False,
+        #     element=orm.RadioButtonsElement(
+        #         options=orm.as_selector_options(
+        #             names=["Send Email", "Don't Send Email"], values=["yes", "no"]
+        #         ),
+        #         initial_value="yes",
+        #     ),
+        # ),
         orm.ContextBlock(
             text="*Do not hit Submit more than once!* Even if you get a timeout error, the backblast has likely already been posted. If using email, this can take time and this form may not automatically close."
         ),
@@ -120,13 +131,7 @@ PREBLAST_FORM = orm.BlockView(
             element=orm.PlainTextInputElement(placeholder="Enter a workout title..."),
         ),
         orm.InputBlock(
-            label="The AO",
-            action=actions.PREBLAST_AO,
-            optional=False,
-            element=orm.ChannelsSelectElement(placeholder="Select the AO..."),
-        ),
-        orm.InputBlock(
-            label="Workout Date",
+            label="Event Date",
             action=actions.PREBLAST_DATE,
             optional=False,
             element=orm.DatepickerElement(
@@ -134,16 +139,16 @@ PREBLAST_FORM = orm.BlockView(
             ),
         ),
         orm.InputBlock(
-            label="Workout Time",
+            label="Event Time",
             action=actions.PREBLAST_TIME,
             optional=False,
             element=orm.TimepickerElement(),
         ),
         orm.InputBlock(
-            label="The Q",
+            label="The Q(s)",
             action=actions.PREBLAST_Q,
             optional=False,
-            element=orm.UsersSelectElement(placeholder="Select the Q..."),
+            element=orm.MultiUsersSelectElement(placeholder="Select the Q(s)..."),
         ),
         # orm.InputBlock(
         #   label="The Why",
@@ -153,14 +158,14 @@ PREBLAST_FORM = orm.BlockView(
         #     placeholder="[Optional] Explain the Why...",
         #   )
         # ),
-        orm.InputBlock(
-            label="Coupons?",
-            action=actions.PREBLAST_COUPONS,
-            optional=True,
-            element=orm.PlainTextInputElement(  # TODO: change to radio buttons or checkboxes
-                placeholder="Coupons or not?",
-            ),
-        ),
+        # orm.InputBlock(
+        #     label="Coupons?",
+        #     action=actions.PREBLAST_COUPONS,
+        #     optional=True,
+        #     element=orm.PlainTextInputElement(  # TODO: change to radio buttons or checkboxes
+        #         placeholder="Coupons or not?",
+        #     ),
+        # ),
         # orm.InputBlock(
         #   label="FNGs",
         #   action=actions.PREBLAST_FNGS,

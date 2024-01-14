@@ -11,3 +11,5 @@ SQLAlchemy==1.4.15
 fuzzywuzzy
 python-Levenshtein
 requests==2.29.0
+python-decouple
+pytz

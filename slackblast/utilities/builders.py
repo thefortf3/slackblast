@@ -72,8 +72,8 @@ def build_backblast_form(
         backblast_metadata = parent_metadata or (
             safe_get(body, "container", "channel_id") + "|" + safe_get(body, "container", "message_ts")
         )
-        backblast_form.delete_block(actions.BACKBLAST_EMAIL_SEND)
-        backblast_form.delete_block(actions.BACKBLAST_DESTINATION)
+        # backblast_form.delete_block(actions.BACKBLAST_EMAIL_SEND)
+        # backblast_form.delete_block(actions.BACKBLAST_DESTINATION)
         callback_id = actions.BACKBLAST_EDIT_CALLBACK_ID
     else:
         logger.debug("ao_id is {}".format(ao_id))
@@ -81,13 +81,12 @@ def build_backblast_form(
         backblast_form.set_options(
             {
                 actions.BACKBLAST_DESTINATION: slack_orm.as_selector_options(
-                    names=[f"The AO Channel (#{ao_name})", f"Current Channel (#{channel_name})"],
+                    names=[f"The AO Channel (#{ao_name})"],
                     values=["The_AO", channel_id],
                 )
             }
         )
-        if not (region_record.email_enabled & region_record.email_option_show):
-            backblast_form.delete_block(actions.BACKBLAST_EMAIL_SEND)
+
         backblast_metadata = None
         callback_id = actions.BACKBLAST_CALLBACK_ID
 

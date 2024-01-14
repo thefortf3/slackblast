@@ -60,6 +60,18 @@ Parameters:
     Description: Strava Client Secret
     Type: String
     Default: "123"
+  WordpressAppPassword:
+    Description: Wordpress App Password
+    Type: String
+    Default: "123"
+  WordpressUser:
+    Description: Wordpress User
+    Type: String
+    Default: "123"
+  WordpressBaseUrl:
+    Description: Wordpress Base URL
+    Type: String
+    Default: "123"
 
 Mappings:
   StagesMap:
@@ -137,6 +149,9 @@ Resources:
             - SlackInstallS3Bucket
           STRAVA_CLIENT_ID: !Ref StravaClientID
           STRAVA_CLIENT_SECRET: !Ref StravaClientSecret
+          WORDPRESS_USER: !Ref WordpressUser
+          WORDPRESS_APP_PASSWORD: !Ref WordpressAppPassword
+          WORDPRESS_BASE_URL: !Ref WordpressBaseUrl
 
   # EventRule:
   #   Type: AWS::Events::Rule
@@ -189,3 +204,14 @@ Outputs:
   # S3Bucket:
   #   Description: Bucket Created using this template.
   #   Value: !Ref S3Bucket
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: slackblaster
+    Description: hello world
+    Author: thefortf3
+    SpdxLicenseId: Apache-2.0
+    ReadmeUrl: README.md
+    HomePageUrl: https://github.com/thefortf3/slackblaster
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/thefortf3/slackblaster
