@@ -221,7 +221,7 @@ def get_pax(pax):
 def run_fuzzy_match(workspace_name: str) -> List[str]:
     """Run the fuzz match on the workspace name and return a list of possible matches"""
     paxminer_region_records = DbManager.execute_sql_query(
-        "select schema_name from paxminer.regions"
+        "select schema_name from pax_regions"
     )
     regions_list = [r["schema_name"] for r in paxminer_region_records]
 
@@ -282,7 +282,7 @@ def get_paxminer_schema(team_id: str, logger) -> str:
         return paxminer_schema
 
     else:
-        paxminer_region_records = DbManager.execute_sql_query("select * from paxminer.regions")
+        paxminer_region_records = DbManager.execute_sql_query("select * from pax_regions")
 
         for region in paxminer_region_records:
             slack_client = WebClient(region["slack_token"])

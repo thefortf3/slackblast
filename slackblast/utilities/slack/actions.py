@@ -16,6 +16,7 @@ BACKBLAST_EDIT_CALLBACK_ID = "backblast-edit-id"
 BACKBLAST_DUPLICATE_WARNING = "backblast-duplicate-warning"
 BACKBLAST_NEW_BUTTON = "new-backblast"
 BACKBLAST_OP = "original_poster"
+BACKBLAST_VQ = "is_vq"
 
 PREBLAST_CALLBACK_ID = "preblast-id"
 PREBLAST_TITLE = "title"
